@@ -1,0 +1,44 @@
+A - Accept into input buffer
+C - compute
+D - Dimension array
+E - End subroutine/program
+J - Jump to label
+M - Match
+N - Equivalent of TN
+R - Comment
+T - Type
+U - Use subroutine
+Y - Equivalent to TY
+
+Command format:
+
+[*labe] command{cond}:operands
+cond = Y | N | (expression)
+
+sample:
+
+         t:What is your name?
+         a:$name
+         t:Hello $name
+*loop    t:Enter first number, or 0 to quit
+         a:#a
+   j(#a=0):*end
+         t:Enter second number
+         a:#b
+         c:#c=#a+#b
+         t:Result is: #c
+         j:*loop
+*end     e:
+
+         c:#c=1
+*loop:   t:#c
+         c:#c=#c+1
+  j(#c<10):*loop
+         e:
+
+         c:c=1
+*loop:   t:#c
+         c:c=c+1
+   j(c<10):*loop
+         e:
+
