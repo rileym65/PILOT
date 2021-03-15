@@ -1,14 +1,4 @@
-A - Accept into input buffer
-C - compute
 D - Dimension array
-E - End subroutine/program
-J - Jump to label
-M - Match
-N - Equivalent of TN
-R - Comment
-T - Type
-U - Use subroutine
-Y - Equivalent to TY
 
 A:{var}{,var}{,...}   - Accept input
 C:var=iexpr           - Compute

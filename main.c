@@ -5,6 +5,7 @@
 #include <string.h>
 #include "header.h"
 
+#define OP_END     0
 #define OP_MUL     1
 #define OP_DIV     2
 #define OP_ADD     3
@@ -18,6 +19,8 @@
 #define OP_AND    12
 #define OP_OR     13
 #define OP_XOR    14
+#define OP_OP     15
+#define OP_CP     16
 
 char* trim(char* line) {
   while (*line == ' ' || *line == '\t') line++;
@@ -148,6 +151,8 @@ void tokenize(char* line, int start, int end) {
     else if (line[start] == '&') { tokenTypes[numTokens++] = OP_AND; start++; }
     else if (line[start] == '|') { tokenTypes[numTokens++] = OP_OR; start++; }
     else if (line[start] == '^') { tokenTypes[numTokens++] = OP_XOR; start++; }
+    else if (line[start] == '(') { tokenTypes[numTokens++] = OP_OP; start++; }
+    else if (line[start] == ')') { tokenTypes[numTokens++] = OP_CP; start++; }
     else if (line[start] == '<' && line[start+1] == '=')
       { tokenTypes[numTokens++] = OP_LTE; start+=2; }
     else if (line[start] == '<' && line[start+1] == '>')
@@ -163,221 +168,253 @@ void tokenize(char* line, int start, int end) {
       exit(1);
       }
     }
+  tokenTypes[numTokens++] = OP_END;
   }
 
-int evaluate(int start, int end) {
-  int i;
+int evaluate(int start) {
+  int i,j;
+  int op,cp;
+  int flag;
+  flag = 1;
+  while (flag) {
+    flag = 0;
+    i = start;
+    op = -1;
+    while (tokenTypes[i] != OP_END && tokenTypes[i] != OP_CP) {
+      if (tokenTypes[i] == OP_OP) op = i;
+      i++;
+      }
+    if (tokenTypes[i] == OP_CP && op >= 0) {
+      cp = i;
+      if (op < 0) {
+        printf("Expression error: %s\n",program[pc]);
+        exit(1);
+        }
+      evaluate(op+1);
+      tokenTypes[op] = tokenTypes[op+1];
+      tokens[op] = tokens[op+1];
+      op++;
+      cp = op;
+      while (tokenTypes[cp] != OP_CP) cp++;
+      cp++;
+      while (tokenTypes[op] != OP_END) {
+        tokenTypes[op] = tokenTypes[cp];
+        tokens[op] = tokens[cp];
+        op++;
+        cp++;
+        }
+      tokenTypes[op] = OP_END;
+      numTokens -= 2;
+      flag = -1;
+      i = 0;
+      }
+    }
+
   i = start;
-  while (i < end) {
+  while (tokenTypes[i] != OP_END && tokenTypes[i] != OP_CP) {
     if (tokenTypes[i] == OP_SUB) {
-      if (i == end-1) {
+      if (tokenTypes[i+1] == OP_END) {
         printf("Expression error: %s\n",program[pc]);
         exit(1);
         }
       if ((i == start || tokenTypes[i-1] != ' ') && tokenTypes[i+1] == ' ') {
         tokens[i] = -tokens[i+1];
         tokenTypes[i] = ' ';
-        end -= 1;
+        for (j=i+1; j<numTokens-1; j++) {
+          tokenTypes[j] = tokenTypes[j+1];
+          tokens[j] = tokens[j+1];
+          }
         numTokens -= 1;
         }
       else i++;
       }
     else i++;
     }
+
   i = start;
-  while (i < end) {
+  while (tokenTypes[i] != OP_END && tokenTypes[i] != OP_CP) {
     if (tokenTypes[i] == OP_MUL) {
-      if (i == start || i == end-1) {
-        printf("Expression error: %s\n",program[pc]);
-        exit(1);
-        }
-      if (tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
+      if (i == start || tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
         printf("Expression error: %s\n",program[pc]);
         exit(1);
         }
       tokens[i-1] = tokens[i-1] * tokens[i+1];
       i--;
-      end -= 2;
+      for (j=i+1; j<numTokens-2; j++) {
+        tokenTypes[j] = tokenTypes[j+2];
+        tokens[j] = tokens[j+2];
+        }
       numTokens -= 2;
       }
     else if (tokenTypes[i] == OP_DIV) {
-      if (i == start || i == end-1) {
-        printf("Expression error: %s\n",program[pc]);
-        exit(1);
-        }
-      if (tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
+      if (i == start || tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
         printf("Expression error: %s\n",program[pc]);
         exit(1);
         }
       tokens[i-1] = tokens[i-1] / tokens[i+1];
       i--;
-      end -= 2;
+      for (j=i+1; j<numTokens-2; j++) {
+        tokenTypes[j] = tokenTypes[j+2];
+        tokens[j] = tokens[j+2];
+        }
       numTokens -= 2;
       }
     else i++;
     }
+
   i = start;
-  while (i < end) {
+  while (tokenTypes[i] != OP_END && tokenTypes[i] != OP_CP) {
     if (tokenTypes[i] == OP_ADD) {
-      if (i == start || i == end-1) {
-        printf("Expression error: %s\n",program[pc]);
-        exit(1);
-        }
-      if (tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
+      if (i == start || tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
         printf("Expression error: %s\n",program[pc]);
         exit(1);
         }
       tokens[i-1] = tokens[i-1] + tokens[i+1];
       i--;
-      end -= 2;
+      for (j=i+1; j<numTokens-2; j++) {
+        tokenTypes[j] = tokenTypes[j+2];
+        tokens[j] = tokens[j+2];
+        }
       numTokens -= 2;
       }
     else if (tokenTypes[i] == OP_SUB) {
-      if (i == start || i == end-1) {
-        printf("Expression error: %s\n",program[pc]);
-        exit(1);
-        }
-      if (tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
+      if (i == start || tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
         printf("Expression error: %s\n",program[pc]);
         exit(1);
         }
       tokens[i-1] = tokens[i-1] - tokens[i+1];
       i--;
-      end -= 2;
+      for (j=i+1; j<numTokens-2; j++) {
+        tokenTypes[j] = tokenTypes[j+2];
+        tokens[j] = tokens[j+2];
+        }
       numTokens -= 2;
       }
     else i++;
     }
+
   i = start;
-  while (i < end) {
+  while (tokenTypes[i] != OP_END && tokenTypes[i] != OP_CP) {
     if (tokenTypes[i] == OP_LT) {
-      if (i == start || i == end-1) {
-        printf("Expression error: %s\n",program[pc]);
-        exit(1);
-        }
-      if (tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
+      if (i == start || tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
         printf("Expression error: %s\n",program[pc]);
         exit(1);
         }
       tokens[i-1] = (tokens[i-1] < tokens[i+1]) ? -1 : 0;
       i--;
-      end -= 2;
+      for (j=i+1; j<numTokens-2; j++) {
+        tokenTypes[j] = tokenTypes[j+2];
+        tokens[j] = tokens[j+2];
+        }
       numTokens -= 2;
       }
     else if (tokenTypes[i] == OP_GT) {
-      if (i == start || i == end-1) {
-        printf("Expression error: %s\n",program[pc]);
-        exit(1);
-        }
-      if (tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
+      if (i == start || tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
         printf("Expression error: %s\n",program[pc]);
         exit(1);
         }
       tokens[i-1] = (tokens[i-1] > tokens[i+1]) ? -1 : 0;
       i--;
-      end -= 2;
+      for (j=i+1; j<numTokens-2; j++) {
+        tokenTypes[j] = tokenTypes[j+2];
+        tokens[j] = tokens[j+2];
+        }
       numTokens -= 2;
       }
     if (tokenTypes[i] == OP_LTE) {
-      if (i == start || i == end-1) {
-        printf("Expression error: %s\n",program[pc]);
-        exit(1);
-        }
-      if (tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
+      if (i == start || tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
         printf("Expression error: %s\n",program[pc]);
         exit(1);
         }
       tokens[i-1] = (tokens[i-1] <= tokens[i+1]) ? -1 : 0;
       i--;
-      end -= 2;
+      for (j=i+1; j<numTokens-2; j++) {
+        tokenTypes[j] = tokenTypes[j+2];
+        tokens[j] = tokens[j+2];
+        }
       numTokens -= 2;
       }
     else if (tokenTypes[i] == OP_GTE) {
-      if (i == start || i == end-1) {
-        printf("Expression error: %s\n",program[pc]);
-        exit(1);
-        }
-      if (tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
+      if (i == start || tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
         printf("Expression error: %s\n",program[pc]);
         exit(1);
         }
       tokens[i-1] = (tokens[i-1] >= tokens[i+1]) ? -1 : 0;
       i--;
-      end -= 2;
+      for (j=i+1; j<numTokens-2; j++) {
+        tokenTypes[j] = tokenTypes[j+2];
+        tokens[j] = tokens[j+2];
+        }
       numTokens -= 2;
       }
     if (tokenTypes[i] == OP_EQ) {
-      if (i == start || i == end-1) {
-        printf("Expression error: %s\n",program[pc]);
-        exit(1);
-        }
-      if (tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
+      if (i == start || tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
         printf("Expression error: %s\n",program[pc]);
         exit(1);
         }
       tokens[i-1] = (tokens[i-1] == tokens[i+1]) ? -1 : 0;
       i--;
-      end -= 2;
+      for (j=i+1; j<numTokens-2; j++) {
+        tokenTypes[j] = tokenTypes[j+2];
+        tokens[j] = tokens[j+2];
+        }
       numTokens -= 2;
       }
     else if (tokenTypes[i] == OP_NE) {
-      if (i == start || i == end-1) {
-        printf("Expression error: %s\n",program[pc]);
-        exit(1);
-        }
-      if (tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
+      if (i == start || tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
         printf("Expression error: %s\n",program[pc]);
         exit(1);
         }
       tokens[i-1] = (tokens[i-1] != tokens[i+1]) ? -1 : 0;
       i--;
-      end -= 2;
+      for (j=i+1; j<numTokens-2; j++) {
+        tokenTypes[j] = tokenTypes[j+2];
+        tokens[j] = tokens[j+2];
+        }
       numTokens -= 2;
       }
     else i++;
     }
+
   i = start;
-  while (i < end) {
+  while (tokenTypes[i] != OP_END && tokenTypes[i] != OP_CP) {
     if (tokenTypes[i] == OP_AND) {
-      if (i == start || i == end-1) {
-        printf("Expression error: %s\n",program[pc]);
-        exit(1);
-        }
-      if (tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
+      if (i == start || tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
         printf("Expression error: %s\n",program[pc]);
         exit(1);
         }
       tokens[i-1] = tokens[i-1] & tokens[i+1];
       i--;
-      end -= 2;
+      for (j=i+1; j<numTokens-2; j++) {
+        tokenTypes[j] = tokenTypes[j+2];
+        tokens[j] = tokens[j+2];
+        }
       numTokens -= 2;
       }
     else if (tokenTypes[i] == OP_OR) {
-      if (i == start || i == end-1) {
-        printf("Expression error: %s\n",program[pc]);
-        exit(1);
-        }
-      if (tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
+      if (i == start || tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
         printf("Expression error: %s\n",program[pc]);
         exit(1);
         }
       tokens[i-1] = tokens[i-1] | tokens[i+1];
       i--;
-      end -= 2;
+      for (j=i+1; j<numTokens-2; j++) {
+        tokenTypes[j] = tokenTypes[j+2];
+        tokens[j] = tokens[j+2];
+        }
       numTokens -= 2;
       }
     else if (tokenTypes[i] == OP_XOR) {
-      if (i == start || i == end-1) {
-        printf("Expression error: %s\n",program[pc]);
-        exit(1);
-        }
-      if (tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
+      if (i == start || tokenTypes[i-1] != ' ' || tokenTypes[i+1] != ' ') {
         printf("Expression error: %s\n",program[pc]);
         exit(1);
         }
       tokens[i-1] = tokens[i-1] ^ tokens[i+1];
       i--;
-      end -= 2;
+      for (j=i+1; j<numTokens-2; j++) {
+        tokenTypes[j] = tokenTypes[j+2];
+        tokens[j] = tokens[j+2];
+        }
       numTokens -= 2;
       }
     else i++;
@@ -481,8 +518,8 @@ void command_c(char* line) {
   while (line[end] != 0) end++;
   end--;
   tokenize(line,start,end);
-  evaluate(0, numTokens);
-  if (numTokens != 1) {
+  evaluate(0);
+  if (tokenTypes[0] != ' ' || tokenTypes[1] != OP_END) {
     printf("Expression error: %s\n",program[pc]);
     exit(1);
     }
@@ -585,11 +622,11 @@ void command_g(char* line) {
   x = comma-line;
   x--;
   tokenize(line, 0, x);
-  x = evaluate(0, numTokens);
+  x = evaluate(0);
   comma++;
   comma = trim(comma);
   tokenize(comma, 0, strlen(comma)-1);
-  y = evaluate(0, numTokens);
+  y = evaluate(0);
   printf("\e[%d;%dH",y,x);
   }
 
@@ -660,8 +697,8 @@ void execute(char* line) {
       }
     i -= 2;
     tokenize(line, 0, i);
-    evaluate(0,numTokens);
-    if (numTokens != 1) {
+    evaluate(0);
+    if (tokenTypes[0] != ' ' || tokenTypes[1] != OP_END) {
       printf("Expression error: [%d] %s\n",pc,program[pc]);
       exit(1);
       }
