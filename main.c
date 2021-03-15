@@ -382,6 +382,7 @@ int evaluate(int start, int end) {
       }
     else i++;
     }
+  return tokens[0];
   }
 
 
@@ -551,6 +552,9 @@ void command_t(char* line) {
       line = getVariable(line,var);
       printf("%d",getIntegerVar(var));
       }
+    else if (*line == '\\') {
+      return;
+      }
     else {
       printf("%c",*line++);
       }
@@ -565,6 +569,34 @@ void command_u(char* line) {
   pc = find_label(line);
   jumped = -1;
   }
+
+/* ***************************** */
+/* ***** Extended commands ***** */
+/* ***************************** */
+
+void command_g(char* line) {
+  int   x,y;
+  char* comma;
+  comma = strchr(line, ',');
+  if (comma == NULL) {
+    printf("Syntax error: %s\n",program[pc]);
+    exit(1);
+    }
+  x = comma-line;
+  x--;
+  tokenize(line, 0, x);
+  x = evaluate(0, numTokens);
+  comma++;
+  comma = trim(comma);
+  tokenize(comma, 0, strlen(comma)-1);
+  y = evaluate(0, numTokens);
+  printf("\e[%d;%dH",y,x);
+  }
+
+void command_l(char* line) {
+  printf("\e[H\e[2J");
+  }
+
 
 void execute(char* line) {
   int i;
@@ -630,6 +662,9 @@ void execute(char* line) {
     case 'U': command_u(line); break;
     case 'Y': if (matched != 0) command_t(line);
               break;
+
+    case 'G': command_g(line); break;
+    case 'L': command_l(line); break;
     default : printf("Unknown command: %c\n",cmd); exit(1);
     }
   }

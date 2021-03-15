@@ -10,10 +10,28 @@ T - Type
 U - Use subroutine
 Y - Equivalent to TY
 
+A:{var}{,var}{,...}   - Accept input
+C:var=iexpr           - Compute
+E:                    - End subroutine/program
+J:*label              - jump to labeled line
+M:text{,text}{,...}   - Match
+N:text                - Equivalent to TN
+R:text                - Remark
+T:text                - Type output
+U:*label              - call subroutine
+Y:text                - Equivalent to TY
+
+Extended commands:
+G:x,y         - Position cursor
+L:            - cLear screen
+
 Command format:
 
 [*labe] command{cond}:operands
 cond = Y | N | (expression)
+
+Notes:
+  On T command, if line ends with \ then no CR will be output
 
 sample:
 
