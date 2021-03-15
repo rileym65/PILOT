@@ -24,6 +24,7 @@ Y:text                - Equivalent to TY
 Extended commands:
 G:x,y         - Position cursor
 L:            - cLear screen
+P:text        - Print output to printer.txt
 
 Command format:
 

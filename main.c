@@ -597,6 +597,33 @@ void command_l(char* line) {
   printf("\e[H\e[2J");
   }
 
+void command_p(char* line) {
+  FILE *file;
+  char var[32];
+  file = fopen("printer.txt","a");
+  while (*line != 0) {
+    if (*line == '$') {
+      line++;
+      line = getVariable(line,var);
+      fprintf(file,"%s",getStringVar(var));
+      }
+    if (*line == '#') {
+      line++;
+      line = getVariable(line,var);
+      fprintf(file,"%d",getIntegerVar(var));
+      }
+    else if (*line == '\\') {
+      fclose(file);
+      return;
+      }
+    else {
+      fprintf(file,"%c",*line++);
+      }
+    }
+  fprintf(file,"\n");
+  fclose(file);
+  }
+
 
 void execute(char* line) {
   int i;
@@ -665,6 +692,7 @@ void execute(char* line) {
 
     case 'G': command_g(line); break;
     case 'L': command_l(line); break;
+    case 'P': command_p(line); break;
     default : printf("Unknown command: %c\n",cmd); exit(1);
     }
   }
