@@ -22,6 +22,13 @@
 #define OP_OP     15
 #define OP_CP     16
 
+void show_tokens() {
+  int i;
+  for (i=0; i<numTokens; i++)
+    printf("%d   %d\n",tokenTypes[i], tokens[i]);
+  printf("-------\n");
+  }
+
 char* trim(char* line) {
   while (*line == ' ' || *line == '\t') line++;
   return line;
@@ -630,6 +637,24 @@ void command_g(char* line) {
   printf("\e[%d;%dH",y,x);
   }
 
+void command_k(char* line) {
+  int   x,y;
+  char* comma;
+  comma = strchr(line, ',');
+  while (comma != NULL) {
+    x = comma - line;
+    x--;
+    tokenize(line, 0, x);
+    x = evaluate(0);
+    printf("%c",x);
+    line = comma + 1;
+    comma = strchr(line, ',');
+    }
+  tokenize(line, 0, strlen(line)-1);
+  x = evaluate(0);
+  printf("%c",x);
+  }
+
 void command_l(char* line) {
   printf("\e[H\e[2J");
   }
@@ -728,6 +753,7 @@ void execute(char* line) {
               break;
 
     case 'G': command_g(line); break;
+    case 'K': command_k(line); break;
     case 'L': command_l(line); break;
     case 'P': command_p(line); break;
     default : printf("Unknown command: %c\n",cmd); exit(1);

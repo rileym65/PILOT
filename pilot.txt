@@ -13,6 +13,7 @@ Y:text                - Equivalent to TY
 
 Extended commands:
 G:x,y         - Position cursor
+K:value{,value}{,...} - Output values as ASCII
 L:            - cLear screen
 P:text        - Print output to printer.txt
 
