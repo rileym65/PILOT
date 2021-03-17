@@ -208,13 +208,13 @@ int evaluate(char* buffer) {
       parens--;
       while (numTokens >= 2 &&
              types[numTokens-2] != OP_OP &&
-             types[numTokens-2] >= 100) reduce();
+             types[numTokens-2] >= 0x10) reduce();
       if (numTokens < 2) {
         printf("Expression Error\n");
         exit(1);
         }
-      while (types[numTokens-2] != OP_OP &&
-             types[numTokens-2] >= 100) reduce();
+//      while (types[numTokens-2] != OP_OP &&
+//             types[numTokens-2] >= 0x10) reduce();
       types[numTokens-2] = OP_NUM;
       tokens[numTokens-2] = tokens[numTokens-1];
       numTokens--;
