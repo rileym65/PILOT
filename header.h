@@ -22,7 +22,7 @@ LINK int    *integerValues;
 LINK int     numIntegerVars;
 LINK char    acceptBuffer[256];
 LINK int     tokens[64];
-LINK char    tokenTypes[64];
+LINK char    types[64];
 LINK int     numTokens;
 
 #endif
